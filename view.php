@@ -68,25 +68,27 @@ $results = [];
 
 // Procesar cada participante
   
-$minimo = PHP_FLOAT_MAX;
+$results = []; // Inicializar el array $results
 
 foreach ($participants as $participant) {
     $email = $participant['user_email'];
     $name = $participant['name'];
     $duration = $participant['duration'];
     $join_time = $participant['join_time'];
-    // Si el email ya existe en el array resultante, sumar la duración 
 
+    // Si el email ya existe en el array resultante, sumar la duración y tomar el join_time más temprano
     if (isset($results[$email])) {
-        $actual = $join_time;
-        $variable = ($minimo < $actual) ? $minimo : $actual;
+        // Sumar la duración
         $results[$email]['duration'] += $duration;
 
-
+        // Actualizar el join_time al más temprano
+        if ($join_time < $results[$email]['join_time']) {
+            $results[$email]['join_time'] = $join_time;
+        }
     } else {
         // Si el email no existe, agregar un nuevo registro
         $results[$email] = [
-            'join_time'=> $minimo,
+            'join_time' => $join_time,
             'name' => $name,
             'user_email' => $email,
             'duration' => $duration
@@ -94,13 +96,10 @@ foreach ($participants as $participant) {
     }
 }
 
+// Ahora el array $results contiene la duración total para cada email y el join_time más temprano
+
 echo 'resultados' . '<br>' ;
-// Imprimir el resultado (opcional)
-foreach($results as $result) {
-    echo $result;
-}
-
-
+print_r($results);
 
 //obtener cursantes
 try {
@@ -115,9 +114,9 @@ try {
 
 }
 
-function llegoTarde($participant) {
+function llegoTarde($result) {
     global $hora_comienzo_reunion;
-    return (($participant['join_time'] / 60) - ($hora_comienzo_reunion / 60)) > 20;
+    return (($result['join_time'] / 60) - ($hora_comienzo_reunion / 60)) > 20;
 }
 
 function estuvoTiempoRequerido($total_duracion, $porcentaje) {
@@ -142,6 +141,7 @@ echo 'nombre: ' . $participant['name'] . ' duracion: ' . $participant['duration'
 
 $userid = 2; // aca va el id del usuario admin
 $courses = attendance_handler::get_courses_with_today_sessions($userid);
+
 
 // Iterar sobre los cursos y sus instancias de asistencia
 $nombreCurso = $course->fullname;
@@ -221,22 +221,25 @@ try {
          $cursanteEncontrado = false;
          $cursantePresente = false;
 
-         $fullname = $cursante->lastname . ' ' . $cursante->firstname;
+
+         $fullname = trim($cursante->lastname . ' ' . $cursante->firstname);
+         $fullname2 = trim($cursante->firstname . ' ' . $cursante->lastname);
+         
         foreach ($results as $result) {
             
-          if ($result['name'] == $fullname && $result['user_email'] == $cursante->email) {
-      
+              if ((strcasecmp($result['name'], $fullname) == 0 || strcasecmp($result['name'], $fullname2) == 0) &&
+        strcasecmp($result['user_email'], $cursante->email) == 0) {
             $cursanteEncontrado = true;     
-                                           
+            echo 'paso por aca';                          
         if(estuvoTiempoRequerido($result['duration'] , PORC_TIEMPO_REQUERIDO))  {
             echo 'paso por estuvo tiempo requerido'; 
-        if(!llegoTarde($result['join_time'])) {
+        if(!llegoTarde($result)) {
             echo 'paso por llegada tarde'; 
             $cursantePresente = true;
             $contador += 1;
              echo $contador ."". ")" ;
              // aca habria que pasar los datos a las tablas de attendance, sessionid de attendance se podria obtener con el grupo y la fecha de la reunion 
-              echo "El cursante {$fullname}, con el correo {$cursante->email} asistió a la reunión y estuvo el tiempo requerido por el presente. duracion = {$result['duration']}";
+              echo "El cursante {$fullname}, con el correo {$cursante->email} asistió a la reunión y estuvo el tiempo requerido por el presente. duracion = {$result['duration']} segundos";
                echo "<br>";
                
                $actualizacion = array(
@@ -254,7 +257,7 @@ try {
             $cursantePresente = true;
             $contador += 1;
              echo $contador ."". ")" ;
-              echo "El cursante {$fullname}, con el correo {$cursante->email} asistió a la reunión pero llego tarde y estuvo el tiempo requerido por el presente. {duracion = {$result['duration']}";
+              echo "El cursante {$fullname}, con el correo {$cursante->email} asistió a la reunión pero llego tarde y estuvo el tiempo requerido por el presente. {duracion = {$result['duration']} segundos";
                echo "<br>";
                $actualizacion = array(
                 'sessionid' => $sessionHoy->id,
@@ -275,7 +278,7 @@ try {
             
             $contador += 1;
             echo $contador ."". ")" ;
-            echo "El cursante {$fullname}, con el correo {$cursante->email} no asistió a la reunión. {duracion = {$result['duration']}";
+            echo "El cursante {$fullname}, con el correo {$cursante->email} no asistió a la reunión.";
             echo "<br>";
 
             $actualizacion = array(
@@ -296,9 +299,9 @@ try {
     //throw $th;
 }
 
+if($courses && !empty($sessionHoy)) {
 foreach ($actualizaciones as $actualizacion) {
     attendance_handler::update_user_status($actualizacion['sessionid'], $actualizacion['studentid'], $actualizacion['takenbyid'], $actualizacion['statusid'], $actualizacion['statusset']);
-}
+} }
 
 echo $OUTPUT->footer();
-
