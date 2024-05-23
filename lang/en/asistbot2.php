@@ -26,3 +26,5 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['pluginname'] = 'ASISTBOT2';
+$string['modulename'] = 'AsistBot2';
+$string['modulenameplural'] = 'AsistBots2';
