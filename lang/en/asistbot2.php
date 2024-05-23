@@ -15,18 +15,14 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Code that is executed before the tables and data are dropped during the plugin uninstallation.
+ * Plugin strings are defined here.
  *
  * @package     mod_asistbot2
- * @category    upgrade
+ * @category    string
  * @copyright   2024 Your Name <abich@example.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-/**
- * Custom uninstallation procedure.
- */
-function xmldb_asistbot2_uninstall() {
+defined('MOODLE_INTERNAL') || die();
 
-    return true;
-}
+$string['pluginname'] = 'ASISTBOT2';

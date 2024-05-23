@@ -17,7 +17,7 @@
 /**
  * Library of interface functions and constants.
  *
- * @package     mod_asistbotv1
+ * @package     mod_asistbot2
  * @copyright   2024 Your Name <abich@example.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -28,7 +28,7 @@
  * @param string $feature Constant representing the feature.
  * @return true | null True if the feature is supported, null otherwise.
  */
-function asistbotv1_supports($feature) {
+function asistbot2_supports($feature) {
     switch ($feature) {
         case FEATURE_MOD_INTRO:
             return true;
@@ -38,85 +38,85 @@ function asistbotv1_supports($feature) {
 }
 
 /**
- * Saves a new instance of the mod_asistbotv1 into the database.
+ * Saves a new instance of the mod_asistbot2 into the database.
  *
  * Given an object containing all the necessary data, (defined by the form
  * in mod_form.php) this function will create a new instance and return the id
  * number of the instance.
  *
  * @param object $moduleinstance An object from the form.
- * @param mod_asistbotv1_mod_form $mform The form.
+ * @param mod_asistbot2_mod_form $mform The form.
  * @return int The id of the newly inserted record.
  */
-function asistbotv1_add_instance($moduleinstance, $mform = null) {
+function asistbot2_add_instance($moduleinstance, $mform = null) {
     global $DB;
 
     $moduleinstance->timecreated = time();
 
-    $id = $DB->insert_record('asistbotv1', $moduleinstance);
+    $id = $DB->insert_record('asistbot2', $moduleinstance);
 
     return $id;
 }
 
 /**
- * Updates an instance of the mod_asistbotv1 in the database.
+ * Updates an instance of the mod_asistbot2 in the database.
  *
  * Given an object containing all the necessary data (defined in mod_form.php),
  * this function will update an existing instance with new data.
  *
  * @param object $moduleinstance An object from the form in mod_form.php.
- * @param mod_asistbotv1_mod_form $mform The form.
+ * @param mod_asistbot2_mod_form $mform The form.
  * @return bool True if successful, false otherwise.
  */
-function asistbotv1_update_instance($moduleinstance, $mform = null) {
+function asistbot2_update_instance($moduleinstance, $mform = null) {
     global $DB;
 
     $moduleinstance->timemodified = time();
     $moduleinstance->id = $moduleinstance->instance;
 
-    return $DB->update_record('asistbotv1', $moduleinstance);
+    return $DB->update_record('asistbot2', $moduleinstance);
 }
 
 /**
- * Removes an instance of the mod_asistbotv1 from the database.
+ * Removes an instance of the mod_asistbot2 from the database.
  *
  * @param int $id Id of the module instance.
  * @return bool True if successful, false on failure.
  */
-function asistbotv1_delete_instance($id) {
+function asistbot2_delete_instance($id) {
     global $DB;
 
-    $exists = $DB->get_record('asistbotv1', array('id' => $id));
+    $exists = $DB->get_record('asistbot2', array('id' => $id));
     if (!$exists) {
         return false;
     }
 
-    $DB->delete_records('asistbotv1', array('id' => $id));
+    $DB->delete_records('asistbot2', array('id' => $id));
 
     return true;
 }
 
 /**
- * Extends the global navigation tree by adding mod_asistbotv1 nodes if there is a relevant content.
+ * Extends the global navigation tree by adding mod_asistbot2 nodes if there is a relevant content.
  *
  * This can be called by an AJAX request so do not rely on $PAGE as it might not be set up properly.
  *
- * @param navigation_node $asistbotv1node An object representing the navigation tree node.
+ * @param navigation_node $asistbot2node An object representing the navigation tree node.
  * @param stdClass $course
  * @param stdClass $module
  * @param cm_info $cm
  */
-function asistbotv1_extend_navigation($asistbotv1node, $course, $module, $cm) {
+function asistbot2_extend_navigation($asistbot2node, $course, $module, $cm) {
 }
 
 /**
- * Extends the settings navigation with the mod_asistbotv1 settings.
+ * Extends the settings navigation with the mod_asistbot2 settings.
  *
- * This function is called when the context for the page is a mod_asistbotv1 module.
+ * This function is called when the context for the page is a mod_asistbot2 module.
  * This is not called by AJAX so it is safe to rely on the $PAGE.
  *
  * @param settings_navigation $settingsnav {@see settings_navigation}
- * @param navigation_node $asistbotv1node {@see navigation_node}
+ * @param navigation_node $asistbot2node {@see navigation_node}
  */
-function asistbotv1_extend_settings_navigation($settingsnav, $asistbotv1node = null) {
+function asistbot2_extend_settings_navigation($settingsnav, $asistbot2node = null) {
 }

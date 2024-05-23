@@ -17,15 +17,15 @@
 /**
  * Plugin version and other meta-data are defined here.
  *
- * @package     mod_asistbotv1
+ * @package     mod_asistbot2
  * @copyright   2024 Your Name <abich@example.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'mod_asistbotv1';
+$plugin->component = 'mod_asistbot2';
 $plugin->release = '0.1.0';
-$plugin->version = 2024050600;
+$plugin->version = 2024052200;
 $plugin->requires = 2022112800;
 $plugin->maturity = MATURITY_ALPHA;

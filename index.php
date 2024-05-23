@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Display information about all the mod_asistbotv1 modules in the requested course.
+ * Display information about all the mod_asistbot2 modules in the requested course.
  *
- * @package     mod_asistbotv1
+ * @package     mod_asistbot2
  * @copyright   2024 Your Name <abich@example.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -33,26 +33,26 @@ require_course_login($course);
 
 $coursecontext = context_course::instance($course->id);
 
-$event = \mod_asistbotv1\event\course_module_instance_list_viewed::create(array(
+$event = \mod_asistbot2\event\course_module_instance_list_viewed::create(array(
     'context' => $modulecontext
 ));
 $event->add_record_snapshot('course', $course);
 $event->trigger();
 
-$PAGE->set_url('/mod/asistbotv1/index.php', array('id' => $id));
+$PAGE->set_url('/mod/asistbot2/index.php', array('id' => $id));
 $PAGE->set_title(format_string($course->fullname));
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($coursecontext);
 
 echo $OUTPUT->header();
 
-$modulenameplural = get_string('modulenameplural', 'mod_asistbotv1');
+$modulenameplural = get_string('modulenameplural', 'mod_asistbot2');
 echo $OUTPUT->heading($modulenameplural);
 
-$asistbotv1s = get_all_instances_in_course('asistbotv1', $course);
+$asistbot2s = get_all_instances_in_course('asistbot2', $course);
 
-if (empty($asistbotv1s)) {
-    notice(get_string('no$asistbotv1instances', 'mod_asistbotv1'), new moodle_url('/course/view.php', array('id' => $course->id)));
+if (empty($asistbot2s)) {
+    notice(get_string('no$asistbot2instances', 'mod_asistbot2'), new moodle_url('/course/view.php', array('id' => $course->id)));
 }
 
 $table = new html_table();
@@ -69,20 +69,20 @@ if ($course->format == 'weeks') {
     $table->align = array('left', 'left', 'left');
 }
 
-foreach ($asistbotv1s as $asistbotv1) {
-    if (!$asistbotv1->visible) {
+foreach ($asistbot2s as $asistbot2) {
+    if (!$asistbot2->visible) {
         $link = html_writer::link(
-            new moodle_url('/mod/asistbotv1/view.php', array('id' => $asistbotv1->coursemodule)),
-            format_string($asistbotv1->name, true),
+            new moodle_url('/mod/asistbot2/view.php', array('id' => $asistbot2->coursemodule)),
+            format_string($asistbot2->name, true),
             array('class' => 'dimmed'));
     } else {
         $link = html_writer::link(
-            new moodle_url('/mod/asistbotv1/view.php', array('id' => $asistbotv1->coursemodule)),
-            format_string($asistbotv1->name, true));
+            new moodle_url('/mod/asistbot2/view.php', array('id' => $asistbot2->coursemodule)),
+            format_string($asistbot2->name, true));
     }
 
     if ($course->format == 'weeks' || $course->format == 'topics') {
-        $table->data[] = array($asistbotv1->section, $link);
+        $table->data[] = array($asistbot2->section, $link);
     } else {
         $table->data[] = array($link);
     }

@@ -17,7 +17,7 @@
 /**
  * Code to be executed after the plugin's database scheme has been installed is defined here.
  *
- * @package     mod_asistbotv1
+ * @package     mod_asistbot2
  * @category    upgrade
  * @copyright   2024 Your Name <abich@example.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -26,7 +26,7 @@
 /**
  * Custom code to be run on installing the plugin.
  */
-function xmldb_asistbotv1_install() {
+function xmldb_asistbot2_install() {
 
     return true;
 }

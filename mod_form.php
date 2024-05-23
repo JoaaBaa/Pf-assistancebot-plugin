@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * The main mod_asistbotv1 configuration form.
+ * The main mod_asistbot2 configuration form.
  *
- * @package     mod_asistbotv1
+ * @package     mod_asistbot2
  * @copyright   2024 Your Name <abich@example.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -29,11 +29,11 @@ require_once($CFG->dirroot.'/course/moodleform_mod.php');
 /**
  * Module instance settings form.
  *
- * @package     mod_asistbotv1
+ * @package     mod_asistbot2
  * @copyright   2024 Your Name <abich@example.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class mod_asistbotv1_mod_form extends moodleform_mod {
+class mod_asistbot2_mod_form extends moodleform_mod {
 
     /**
      * Defines forms elements
@@ -47,7 +47,7 @@ class mod_asistbotv1_mod_form extends moodleform_mod {
         $mform->addElement('header', 'general', get_string('general', 'form'));
 
         // Adding the standard "name" field.
-        $mform->addElement('text', 'name', get_string('asistbotv1name', 'mod_asistbotv1'), array('size' => '64'));
+        $mform->addElement('text', 'name', get_string('asistbot2name', 'mod_asistbot2'), array('size' => '64'));
 
         if (!empty($CFG->formatstringstriptags)) {
             $mform->setType('name', PARAM_TEXT);
@@ -57,7 +57,7 @@ class mod_asistbotv1_mod_form extends moodleform_mod {
 
         $mform->addRule('name', null, 'required', null, 'client');
         $mform->addRule('name', get_string('maximumchars', '', 255), 'maxlength', 255, 'client');
-        $mform->addHelpButton('name', 'asistbotv1name', 'mod_asistbotv1');
+        $mform->addHelpButton('name', 'asistbot2name', 'mod_asistbot2');
 
         // Adding the standard "intro" and "introformat" fields.
         if ($CFG->branch >= 29) {
@@ -66,10 +66,10 @@ class mod_asistbotv1_mod_form extends moodleform_mod {
             $this->add_intro_editor();
         }
 
-        // Adding the rest of mod_asistbotv1 settings, spreading all them into this fieldset
+        // Adding the rest of mod_asistbot2 settings, spreading all them into this fieldset
         // ... or adding more fieldsets ('header' elements) if needed for better logic.
-        $mform->addElement('static', 'label1', 'asistbotv1settings', get_string('asistbotv1settings', 'mod_asistbotv1'));
-        $mform->addElement('header', 'asistbotv1fieldset', get_string('asistbotv1fieldset', 'mod_asistbotv1'));
+        $mform->addElement('static', 'label1', 'asistbot2settings', get_string('asistbot2settings', 'mod_asistbot2'));
+        $mform->addElement('header', 'asistbot2fieldset', get_string('asistbot2fieldset', 'mod_asistbot2'));
 
         // Add standard elements.
         $this->standard_coursemodule_elements();
