@@ -27,13 +27,13 @@ defined('MOODLE_INTERNAL') || die();
 
 $string['pluginname'] = 'ASISTBOT2';
 //Porcentaje acistencias y pedido de cámara
-$string['attendancepercentage'] = 'Attendance time';
-$string['attendancepercentage_help'] = 'Enter in minutes the minimum required time of attendance.';
-$string['invalidattendancepercentage'] = 'Invalid attendance time. Please enter a valid number.';
-$string['attendancepercentagerange'] = 'Attendance percentage must be between 75% and 100%.';
+$string['attendancepercentage'] = 'Tiempo de asistencia';
+$string['attendancepercentage_help'] = 'Ingrese en minutos el valor mínimo de asistencia Requerido para el curso.';
+$string['invalidattendancepercentage'] = 'Rango de asistencia inválido. Ingrese un número válido.';
+$string['attendancepercentagerange'] = 'El rango de asistencia debe estar entre 75% y 100%.';
 
-$string['requirecamera'] = 'Require Camera';
-$string['requirecamera_help'] = 'Check this box if students are required to have their cameras on.';
+$string['requirecamera'] = 'Requiere cámara';
+$string['requirecamera_help'] = 'Marcar si la camara debe estar encendida';
 
-//tarea programada
-$string['tarea_programada'] = 'Programmed  task in Asistbot2';
+//Tarea programada
+$string['tarea_programada'] = 'Tarea Programada de Asistbot2';

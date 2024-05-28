@@ -71,6 +71,28 @@ class mod_asistbot2_mod_form extends moodleform_mod {
         $mform->addElement('static', 'label1', 'asistbot2settings', get_string('asistbot2settings', 'mod_asistbot2'));
         $mform->addElement('header', 'asistbot2fieldset', get_string('asistbot2fieldset', 'mod_asistbot2'));
 
+        // Adding a percentage field for attendance.
+        $mform->addElement('text', 'attendancepercentage', get_string('attendancepercentage', 'mod_asistbot2'), array('size' => '4'));
+        $mform->setType('attendancepercentage', PARAM_INT);
+        $mform->addRule('attendancepercentage', null, 'required', null, 'client');
+        $mform->addHelpButton('attendancepercentage', 'attendancepercentage', 'mod_asistbot2');
+
+        // Adding a checkbox for requiring camera.
+        $mform->addElement('advcheckbox', 'requirecamera', get_string('requirecamera', 'mod_asistbot2'));
+        $mform->addHelpButton('requirecamera', 'requirecamera', 'mod_asistbot2');
+        
+        // ESTE MÉTODO VALIDABA PORCENTAJE DE ASISTENCIA, CAMBIAMOS A TIEMPO EN MINUTOS DE  DURACION DE CLASE,
+        // PERO SI NECESITAN UNA VALIDACION DE FORMULARIO ACA DEJO EL EJEMPLO. 
+        //public function validation($data, $files) {
+        //    $errors = parent::validation($data, $files);
+    
+        //    if ($data['attendancepercentage'] < 75 || $data['attendancepercentage'] > 100) {
+        //        $errors['attendancepercentage'] = get_string('attendancepercentagerange', 'mod_asistbot2');
+        //    }
+    
+        //    return $errors;
+        //}
+
         // Add standard elements.
         $this->standard_coursemodule_elements();
 
