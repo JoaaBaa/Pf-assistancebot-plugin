@@ -26,6 +26,9 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['pluginname'] = 'ASISTBOT2';
+$string['modulename'] = 'AsistBot2';
+$string['modulenameplural'] = 'AsistBots2';
+
 //Porcentaje acistencias y pedido de cámara
 $string['attendancepercentage'] = 'Attendance time';
 $string['attendancepercentage_help'] = 'Enter in minutes the minimum required time of attendance.';

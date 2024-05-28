@@ -26,6 +26,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['pluginname'] = 'ASISTBOT2';
+
 //Porcentaje acistencias y pedido de cámara
 $string['attendancepercentage'] = 'Tiempo de asistencia';
 $string['attendancepercentage_help'] = 'Ingrese en minutos el valor mínimo de asistencia Requerido para el curso.';
@@ -37,3 +38,4 @@ $string['requirecamera_help'] = 'Marcar si la camara debe estar encendida';
 
 //Tarea programada
 $string['tarea_programada'] = 'Tarea Programada de Asistbot2';
+
