@@ -40,46 +40,59 @@ $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($modulecontext);
 
 
-const PORC_TIEMPO_REQUERIDO = 0.75; // hay que obtenerlo del mod_form
-const MINUTOS_TOLERANCIA_TARDE = 20;
+$record = $DB->get_record('asistbot2', array('course' => $course->id), 'attendancepercentage');
+$porcRequerido = $record->attendancepercentage / 100;
 
- // funciones para calcular si el alumno estuvo presente, hay que modificarlas para que reciban parametros del formulario 
- function llegoTarde($result) {
-    global $comienzoReunion;
-    return (($result['join_time'] / 60) - ($comienzoReunion / 60)) > 20;
+$minutos_tolerancia_tarde = 20; // esto tambien hay que sacarlo del form
+
+$prefijo_grupos_a_considerar;
+
+ // funciones para calcular si el alumno estuvo presente, hay  que modificarlas para que reciban parametros del formulario 
+ function llegoTarde($participante, $comienzoReunion) {
+    return (($participante['join_time'] / 60) - ($comienzoReunion / 60)) > 20;
 }
 
-function estuvoTiempoRequerido($total_duracion, $porcentaje) {
-    global $duracion_reunion;
+function estuvoTiempoRequerido($duracionParticipante, $porcentaje, $duracion_reunion) {
 
-    $estuvo = false;
-    $minutos_participante = $total_duracion / 60;
     
-    $porcentaje_requerido = $porcentaje * $duracion_reunion;
+    $estuvo = false;
+    $minutos_participante = $duracionParticipante / 60;
+    
+    $tiempo_requerido = $porcentaje * $duracion_reunion;
 
-    if ($minutos_participante >= $porcentaje_requerido) {
+    if ($minutos_participante >= $tiempo_requerido) {
         $estuvo = true;
     }
     return $estuvo;
 }
 
+function camaraEncendida ($participante) { // aplicaria en caso que se encuentre la forma de saber si el participante tuvo prendida la camara 
+         return true;
+}
+
 echo $OUTPUT->header();
 
-$test_date = '2024-05-27'; 
-$startTime = strtotime($test_date . ' 00:00:00');
+function obtenerFechaInicio() {
+    // if (estuvoapagado()) { logica para obtener la ultima fecha en la que se puso asistencia en la materia }
+    return '2024-05-27';
+}
 
-// Convertir la fecha al formato UNIX timestamp del final del día
-$endTime = strtotime($test_date . ' 23:59:59');
+$start_date = '2024-05-27';
+$end_date = '2024-05-30';
 
-// Obtener todas las reuniones de zoom del día de hoy filtrando por el nombre de la materia
+// Modificar la consulta SQL para filtrar por un rango de fechas y ordenar por fecha de inicio ascendente
 $sql = "SELECT zd.*, z.name, z.course
-        FROM {zoom_meeting_details} zd
-        JOIN {zoom} z ON zd.zoomid = z.id
-        WHERE z.course = :courseid AND 
-        DATE(FROM_UNIXTIME(zd.start_time)) = :test_date"; 
+FROM {zoom_meeting_details} zd
+JOIN {zoom} z ON zd.zoomid = z.id
+WHERE z.course = :courseid AND 
+DATE(FROM_UNIXTIME(zd.start_time)) BETWEEN :start_date AND :end_date AND
+DAYOFWEEK(FROM_UNIXTIME(zd.start_time)) IN (2, 3, 4, 5) AND
+TIME(FROM_UNIXTIME(zd.start_time)) BETWEEN '18:30:00' AND '23:30:00'
+ORDER BY zd.start_time ASC"; 
 
 $params = [
-    'test_date' => $test_date,
+    'start_date' => $start_date,
+    'end_date' => $end_date,
     'courseid' => $course->id
 ];
 
@@ -92,6 +105,7 @@ echo "<br>";
 
 $filteredMeetings = new stdClass();
 
+// Filtrar las reuniones y unirlas en caso de que sean del mismo grupo (zoomid) y la misma fecha de reunión y obtener horario de inicio y duración total
 foreach ($meetings as $meeting) {
     $id = $meeting->id;
     $zoomid = $meeting->zoomid;
@@ -102,81 +116,49 @@ foreach ($meetings as $meeting) {
     $topic = $meeting->topic;
     $name = $meeting->name;
 
-    // Convertir start_time y end_time a objetos DateTime en la zona horaria de Argentina
-    $startDateTime = new DateTime("@$start_time");
-    $startDateTime->setTimezone(new DateTimeZone('America/Argentina/Buenos_Aires'));
+    $dateTime = new DateTime("@$start_time");
 
-    $endDateTime = new DateTime("@$end_time");
-    $endDateTime->setTimezone(new DateTimeZone('America/Argentina/Buenos_Aires'));
+    $dateTime->setTimezone(new DateTimeZone('America/Argentina/Buenos_Aires'));
 
-    // Extraer la hora de startDateTime y endDateTime
-    $startHour = (int)$startDateTime->format('G');  // Hora en formato 24 horas (0-23)
-    $startMinute = (int)$startDateTime->format('i');  // Minuto (0-59)
-    $endHour = (int)$endDateTime->format('G');
-    $endMinute = (int)$endDateTime->format('i');
+    $fecha_reunion = $dateTime->format('Y-m-d');
 
-    // Definir el rango horario de 18:30 a 23:00 habria que pasarlo por parametro quizas segun cada materia 
-    $rangeStartHour = 18;
-    $rangeStartMinute = 30;
-    $rangeEndHour = 23;
-    $rangeEndMinute = 30;
 
-    // Verificar si la reunión está dentro del rango horario
-    $isWithinRange = (
-        ($startHour > $rangeStartHour || ($startHour == $rangeStartHour && $startMinute >= $rangeStartMinute)) &&
-        ($endHour < $rangeEndHour || ($endHour == $rangeEndHour && $endMinute <= $rangeEndMinute))
-    );
+    // Crear una clave única basada en zoomid y fecha de reunión
+    $unique_key = $zoomid . '_' . $fecha_reunion;
 
-    if ($isWithinRange) {
-        if (isset($filteredMeetings->$zoomid)) {
-            // Sumar la duración
-            $filteredMeetings->$zoomid->duration += $duration;
+    if (isset($filteredMeetings->$unique_key)) {
+        // Sumar la duración
+        $filteredMeetings->$unique_key->duration += $duration;
 
-            // Actualizar el start_time al más temprano y el end_time al más tardío
-            if ($start_time < $filteredMeetings->$zoomid->start_time) {
-                $filteredMeetings->$zoomid->start_time = $start_time;
-            }
-            if ($end_time > $filteredMeetings->$zoomid->end_time) {
-                $filteredMeetings->$zoomid->end_time = $end_time;
-            }
-
-            // Agregar el nuevo id al array de ids
-            $filteredMeetings->$zoomid->ids[] = $id;
-        } else {
-            // Si la reunión no existe, agregar un nuevo registro
-            $filteredMeetings->$zoomid = (object)[
-                'ids' => [$id],
-                'meeting_id' => $meeting_id,
-                'name' => $name,
-                'start_time' => $start_time,
-                'end_time' => $end_time,
-                'duration' => $duration,
-                'topic' => $topic,
-                'startDateTime' => $startDateTime, 
-                'endDateTime' => $startDateTime
-            ];
+        // Actualizar el start_time al más temprano y el end_time al más tardío
+        if ($start_time < $filteredMeetings->$unique_key->start_time) {
+            $filteredMeetings->$unique_key->start_time = $start_time;
         }
-    }
-}
-// Print the filtered meetings
-//print_r($filteredMeetings);
+        if ($end_time > $filteredMeetings->$unique_key->end_time) {
+            $filteredMeetings->$unique_key->end_time = $end_time;
+        }
 
-foreach ($filteredMeetings as $zoomid => $meeting) { 
-    $full_name = $meeting->name;
-
-if (strpos($full_name, $course->fullname) === 0) {
-    $group_name = trim(str_replace($course->fullname, '', $full_name));
-     
-    $course_name = $course->fullname;
-
-    if (preg_match('/^(BE|YA)-[A-Za-z0-9]{3,4}$/', $group_name)) {
+        // Agregar el nuevo id al array de ids, ya que es la misma reunión pero en veces distintas
+        $filteredMeetings->$unique_key->ids[] = $id;
     } else {
-        $group_name = 0; 
+        // Si la reunión no existe, agregar un nuevo registro
+        $filteredMeetings->$unique_key = (object)[
+            'ids' => [$id],
+            'zoomid' => $zoomid,
+            'meeting_id' => $meeting_id,
+            'name' => $name,
+            'start_time' => $start_time,
+            'end_time' => $end_time,
+            'duration' => $duration,
+            'topic' => $topic,
+            'fecha_reunion' => $fecha_reunion
+        ];
     }
-} else {
-    $group_name = 0;
 }
-    echo "ReunionCurso: " . $course_name . " | Grupo: " . $group_name . "\n".  " Duración: " . $meeting->duration . "\n" . '<br>';
+
+// Procesar cada reunión
+foreach ($filteredMeetings as $unique_key => $meeting) { 
+    echo "<br> Materia: " . $course->fullname . " Duración: " . $meeting->duration . " minutos\n" . "Fecha de reunión: " . $meeting->fecha_reunion . "<br>";
 
 
 //obtener participantes
@@ -197,78 +179,85 @@ foreach($meeting->ids as $id) {
 
 
     // Procesar cada participante
-      
-    $results = []; // Inicializar el array $results
     
+ $participantesXgroupid = [];
+
     foreach ($participants as $participant) {
         $email = $participant['user_email'];
         $name = $participant['name'];
         $duration = $participant['duration'];
         $join_time = $participant['join_time'];
         $userid = $participant['userid'];
-
-        // Si el email ya existe en el array resultante, sumar la duración y tomar el join_time más temprano
-        if (isset($results[$name])) {
-            // Sumar la duración
-            $results[$name]['duration'] += $duration;
     
-            // Actualizar el join_time al más temprano
-            if ($join_time < $results[$name]['join_time']) {
-                $results[$name]['join_time'] = $join_time;
-            }
-        } else {
-            // Si el email no existe, agregar un nuevo registro
-            $results[$name] = [
+        if ($userid != null) {  
+            // Realizar la consulta para obtener el ID del grupo al que pertenece el participante
+            $sql = "SELECT gm.groupid 
+                    FROM {groups_members} gm 
+                    INNER JOIN {groups} g ON gm.groupid = g.id 
+                    INNER JOIN {user} u ON gm.userid = u.id 
+                    INNER JOIN {course} c ON g.courseid = c.id 
+                    WHERE u.id = :userid 
+                    AND c.id = :courseid";
+    
+            // Ejecutar la consulta y obtener el ID del grupo
+            $groupid = $DB->get_field_sql($sql, array('userid' => $userid, 'courseid' => $course->id));
+    
+            // Si el participante pertenece a un grupo
+         if(!empty($groupid)) {
+    if ($groupid !== false) {
+        // Si el grupo aún no existe en el array, lo inicializamos
+        if (!isset($participantesXgroupid[$groupid])) {
+            $participantesXgroupid[$groupid] = [];
+        }
+
+        // Si el participante aún no existe en el array del grupo, lo inicializamos
+        if (!isset($participantesXgroupid[$groupid][$userid])) {
+            $participantesXgroupid[$groupid][$userid] = [
                 'join_time' => $join_time,
+                'duration' => $duration,
                 'name' => $name,
                 'user_email' => $email,
-                'duration' => $duration, 
                 'userid'=> $userid
             ];
+        } else {
+            // Si el participante ya existe, actualizamos el join_time al más temprano
+            if ($join_time < $participantesXgroupid[$groupid][$userid]['join_time']) {
+                $participantesXgroupid[$groupid][$userid]['join_time'] = $join_time;
+            }
+            // Sumamos la duración al participante
+            $participantesXgroupid[$groupid][$userid]['duration'] += $duration;
         }
     }
-
-
-         // si la reunion esta asignada a un grupo especifico, podria obtener los cursantes de ese grupo  
-    if($group_name !== 0) {
-        $group = $DB->get_record('groups', array('name' => $group_name, 'courseid' => $course->id));
-     
-        $cursantes = groups_get_members($group->id); 
+}
+   }
     }
-else {
-    $group->id = 0;
-    $context = context_course::instance($course->id); 
-    $cursantes = get_enrolled_users($context);
-};
+    
+    // obtener la sesion de asistencia  
+    foreach ($participantesXgroupid as $groupid => $participantes) {
+        
+        try{
+            $grupo = $DB->get_record('groups', array('id' => $groupid));
+            $courseid = $course->id;
+        
+            $sql = "SELECT *
+            FROM {attendance_sessions} a
+            WHERE attendanceid IN (SELECT id FROM {attendance} WHERE course = :courseid) 
+            AND groupid = :groupid
+            AND DATE(FROM_UNIXTIME(a.sessdate)) = :test_date";
+        
+        
+        $params = [
+            'courseid' => $courseid,
+            'groupid' => $groupid,
+            'test_date' => $meeting->fecha_reunion
+        ];
+        
+        $session = $DB->get_record_sql($sql, $params);
+        
+    
 
-// obtener la sesion de asistencia
-$courseid = $course->id;
-$groupid = $group->id;
-
-echo 'curso: ' .$courseid . 'grupo: '. $groupid ;
-try{
-    $courseid = $course->id;
-    $groupid = $group->id;
-
-    $sql = "SELECT *
-    FROM {attendance_sessions} a
-    WHERE attendanceid IN (SELECT id FROM {attendance} WHERE course = :courseid) 
-    AND groupid = :groupid
-    AND DATE(FROM_UNIXTIME(a.sessdate)) = :test_date";
-
-
-$params = [
-    'courseid' => $courseid,
-    'groupid' => $groupid,
-    'test_date' => $test_date
-];
-
-$session = $DB->get_record_sql($sql, $params);
-} catch(error){}
-
-print_r($session);
-
-
+        if(!empty($session)) {
+            
 $userid = 2;
 
 $comienzoReunion = $meeting->start_time;
@@ -276,11 +265,6 @@ $duracion = $meeting->duration;
 
 $sessionid = $session->id;
 $attendanceid = $session->attendanceid;
-
-echo 'ID de la session: ' .$sessionid;
-
-
-if(!empty($session)) {
 
 $statuses = $DB->get_records_sql("
     SELECT at.id
@@ -290,7 +274,7 @@ $statuses = $DB->get_records_sql("
 // Inicializar una cadena para almacenar los IDs
 $statuses_string = '';
 
-// Recorrer los registros y concatenar los IDs
+// Recorrer los registros y concatenar los IDs de status 
 foreach ($statuses as $status) {
     $statuses_string .= $status->id . ',';
 }
@@ -304,14 +288,14 @@ $status_ausente = $DB->get_field_select(
     'attendanceid = ? AND acronym = ? ',
     array($attendanceid, 'FI')
 );
-echo $status_ausente. ' <br>';
+
 $status_tarde= $DB->get_field_select(
     'attendance_statuses',
     'id',
     'attendanceid = ? AND acronym = ? ',
     array($attendanceid, 'R')
 );
-echo $status_tarde. ' <br>';
+
 $status_presente = $DB->get_field_select(
     'attendance_statuses',
     'id',
@@ -319,76 +303,74 @@ $status_presente = $DB->get_field_select(
     array($attendanceid, 'P')
 );
 
-foreach ($cursantes as $cursante) {
-    $cursanteEncontrado = false;
-    $cursantePresente = false;
-    $fullname = trim($cursante->lastname . ' ' . $cursante->firstname);
-    $fullname2 = trim($cursante->firstname . ' ' . $cursante->lastname);
-    
-   foreach ($results as $result) {
-       
-         if ((strcasecmp($result['name'], $fullname) == 0 || strcasecmp($result['name'], $fullname2) == 0) 
+            echo "<br> Grupo ID: $groupid\n" . 'nombre del grupo ' . $grupo->name . 'ID de la session: ' .$sessionid; '<br>';
+
+            $cursantes = groups_get_members($groupid); 
+
+            echo "cursantes:\n" . '<br>';
+
+            
+echo 'fin' . '<br><br><br><br>'; 
+
+$actualizacion = [];
+                             
+            foreach ($cursantes as $key => $value) {
+               
+                $cursante_id = $value->id;
+                echo ' nombre:' . $value->firstname . ''. $value->lastname .'<br>'; 
+                // Verificar si el ID del cursante está en la lista de participantes de la reunion 
+
+                // Obtener la información completa del participante
+                    $participante = $participantesXgroupid[$groupid][$cursante_id];
+                    
+                    if(estuvoTiempoRequerido($participante['duration'] , $porcRequerido, $duracion))  {
+                        echo 'paso por estuvo tiempo requerido'; 
+                    if(!llegoTarde($participante, $comienzoReunion)) {
+                        echo 'paso por llegada tarde'; 
+                        $cursantePresente = true;
+                         // aca habria que pasar los datos a las tablas de attendance, sessionid de attendance se podria obtener con el grupo y la fecha de la reunion 
+                          echo "El cursante {$value->firstname} {$value->lastname}, con el correo {$value->email} asistió a la reunión y estuvo el tiempo requerido por el presente. duracion = {$participante['duration']} segundos";
+                           echo "<br>";
+                           
+                           $actualizacion = array(
+                            'sessionid' => $sessionid,'studentid' => $value->id,'takenbyid' => $userid,'statusid' => $status_presente,'statusset' => $statuses_string
+                            //'remark' => 'ORT ASSISTANCE BOT'
+                        );
+                        $actualizaciones[] = $actualizacion;
+                    
+                    }
+                    else {
+                          echo "El cursante  {$value->firstname} {$value->lastname}, con el correo {$value->email} asistió a la reunión pero llego tarde y estuvo el tiempo requerido por el presente. {duracion = {$participante['duration']} segundos";
+                           echo "<br>";
+                           $actualizacion = array('sessionid' => $sessionid,'studentid' => $value->id,'takenbyid' => $userid,'statusid' => $status_tarde,'statusset' => $statuses_string
+                        //'remark' => 'ORT ASSISTANCE BOT'
+                        );
+                        $actualizaciones[] = $actualizacion;
+                    }
+                 } else { 
+                    
+                    echo "El cursante  {$value->firstname} {$value->lastname}, con el correo {$value->email} no asistió a la reunión.";
+                    echo "<br>";
+             
+                    $actualizacion = array(
+                        'sessionid' => $sessionid,'studentid' => $value->id,'takenbyid' => $userid,'statusid' => $status_ausente,'statusset' => $statuses_string//'remark' => 'ORT ASSISTANCE BOT'
+                    );
+                    $actualizaciones[] = $actualizacion;
+                 }
+
+            } foreach ($actualizaciones as $actualizacion) {
+                
+                attendance_handler::update_user_status($actualizacion['sessionid'], $actualizacion['studentid'], $actualizacion['takenbyid'], $actualizacion['statusid'], $actualizacion['statusset']);
+                echo '<br>';
+                echo 'taking assistance: DONE';
+            } 
+}  else {
+    echo 'no hay session para el grupo id ' . $groupid;
+}
+    } catch(error) {}
+}
+}
   // && strcasecmp($result['user_email'], $cursante->email) == 0  lo estoy sacando por que no todos los participantes tienen el email
-   
-   ) {
-       $cursanteEncontrado = true;     
-       echo 'paso por aca';                          
-   if(estuvoTiempoRequerido($result['duration'] , PORC_TIEMPO_REQUERIDO))  {
-       echo 'paso por estuvo tiempo requerido'; 
-   if(!llegoTarde($result)) {
-       echo 'paso por llegada tarde'; 
-       $cursantePresente = true;
-       $contador += 1;
-        echo $contador ."". ")" ;
-        // aca habria que pasar los datos a las tablas de attendance, sessionid de attendance se podria obtener con el grupo y la fecha de la reunion 
-         echo "El cursante {$fullname}, con el correo {$cursante->email} asistió a la reunión y estuvo el tiempo requerido por el presente. duracion = {$result['duration']} segundos";
-          echo "<br>";
-          
-          $actualizacion = array(
-           'sessionid' => $sessionid,'studentid' => $cursante->id,'takenbyid' => $userid,'statusid' => $status_presente,'statusset' => $statuses_string
-           //'remark' => 'ORT ASSISTANCE BOT'
-       );
-       $actualizaciones[] = $actualizacion;
-         break;
-   }
-   else {
 
-       $cursantePresente = true;
-       $contador += 1;
-        echo $contador ."". ")" ;
-         echo "El cursante {$fullname}, con el correo {$cursante->email} asistió a la reunión pero llego tarde y estuvo el tiempo requerido por el presente. {duracion = {$result['duration']} segundos";
-          echo "<br>";
-          $actualizacion = array('sessionid' => $sessionid,'studentid' => $cursante->id,'takenbyid' => $userid,'statusid' => $status_tarde,'statusset' => $statuses_string
-       //'remark' => 'ORT ASSISTANCE BOT'
-       );
-       $actualizaciones[] = $actualizacion;
-     
-         break;
-   }
-}
-       }  
-   } 
-   if (!$cursanteEncontrado|| !$cursantePresente) { 
-       
-       $contador += 1;
-       echo $contador ."". ")" ;
-       echo "El cursante {$fullname}, con el correo {$cursante->email} no asistió a la reunión.";
-       echo "<br>";
-
-       $actualizacion = array(
-           'sessionid' => $sessionid,'studentid' => $cursante->id,'takenbyid' => $userid,'statusid' => $status_ausente,'statusset' => $statuses_string//'remark' => 'ORT ASSISTANCE BOT'
-       );
-       $actualizaciones[] = $actualizacion;
-   }
-
-      
-   } 
-   
-    foreach ($actualizaciones as $actualizacion) {
-        
-        attendance_handler::update_user_status($actualizacion['sessionid'], $actualizacion['studentid'], $actualizacion['takenbyid'], $actualizacion['statusid'], $actualizacion['statusset']);
-        echo '<br>';
-        echo 'taking assistance: DONE';
-    } }  else {echo 'no se encontro la session';}
-}
 echo $OUTPUT->footer();
+
