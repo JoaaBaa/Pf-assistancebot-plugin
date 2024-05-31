@@ -1,3 +1,4 @@
+
 <?php
 /**
  * Prints an instance of mod_asistbot2.
@@ -9,7 +10,9 @@
 
 require(__DIR__.'/../../config.php');
 require_once(__DIR__.'/lib.php');
-require('C:\xampp\htdocs\moodle\mod\attendance\classes\attendance_webservices_handler.php');
+
+require_once($CFG->dirroot . '/mod/attendance/locallib.php');
+require_once($CFG->dirroot . '/mod/attendance/lib.php');
 
 // Set the time zone to Argentina
 date_default_timezone_set('America/Argentina/Buenos_Aires');
@@ -47,6 +50,76 @@ $minutos_tolerancia_tarde = 20; // esto tambien hay que sacarlo del form
 
 $prefijo_grupos_a_considerar;
 
+function add_attendance_session($attendanceid, $groupid, $duration, $sessdate, $description = '') {
+    global $DB;
+
+    // Cargar el objeto attendance
+    $attendance = $DB->get_record('attendance', array('id' => $attendanceid), '*', MUST_EXIST);
+    
+    // Obtener el último valor de caleventid
+    $last_caleventid = $DB->get_field_sql('SELECT MAX(caleventid) FROM {attendance_sessions}');
+    $new_caleventid = $last_caleventid + 1;
+
+    // Crear un objeto de sesión
+    $session = new stdClass();
+    $session->attendanceid = $attendanceid;
+    $session->groupid = $groupid;
+    $session->sessdate = $sessdate;
+    $session->duration = $duration;
+    $session->description = $description;
+    $session->descriptionformat = 1; // o FORMAT_MOODLE, FORMAT_PLAIN, etc.
+    $session->studentscanmark = 0;
+    $session->studentsearlyopentime = 0;
+    $session->autoassignstatus = 0;
+    $session->studentpassword = '';
+    $session->subnet = '';
+    $session->automark = 0;
+    $session->automarkcompleted = 0;
+    $session->statusset = 0;
+    $session->absenteereport = 1;
+    $session->preventsharedip = 0;
+    $session->preventsharediptime = 0;
+    $session->caleventid = $new_caleventid;
+    $session->calendarevent = 1;
+    $session->includeqrcode = 0;
+    $session->rotateqrcode = 0;
+    $session->rotateqrcodesecret = '';
+    $session->automarkcmid = 0;
+    $session->allowupdatestatus = 0;
+
+    // Insertar la sesión en la base de datos
+    $DB->insert_record('attendance_sessions', $session);
+
+    echo "La sesión de asistencia ha sido agregada exitosamente.";
+}
+
+function update_user_status($sessionid, $studentid, $takenbyid, $statusid, $statusset) {
+    global $DB;
+
+    $record = new stdClass();
+    $record->statusset = $statusset;
+    $record->sessionid = $sessionid;
+    $record->timetaken = time();
+    $record->takenby = $takenbyid;
+    $record->statusid = $statusid;
+    $record->studentid = $studentid;
+
+    if ($attendancelog = $DB->get_record('attendance_log', array('sessionid' => $sessionid, 'studentid' => $studentid))) {
+        $record->id = $attendancelog->id;
+        $DB->update_record('attendance_log', $record);
+    } else {
+        $DB->insert_record('attendance_log', $record);
+    }
+
+    if ($attendancesession = $DB->get_record('attendance_sessions', array('id' => $sessionid))) {
+        $attendancesession->lasttaken = time();
+        $attendancesession->lasttakenby = $takenbyid;
+        $attendancesession->timemodified = time();
+
+        $DB->update_record('attendance_sessions', $attendancesession);
+    }
+}
+
  // funciones para calcular si el alumno estuvo presente, hay  que modificarlas para que reciban parametros del formulario 
  function llegoTarde($participante, $comienzoReunion) {
     return (($participante['join_time'] / 60) - ($comienzoReunion / 60)) > 20;
@@ -77,8 +150,8 @@ function obtenerFechaInicio() {
     return '2024-05-27';
 }
 
-$start_date = '2024-05-27';
-$end_date = '2024-05-30';
+$start_date = '2024-05-27'; // fecha de ayer
+$end_date = '2024-05-30';  
 
 // Modificar la consulta SQL para filtrar por un rango de fechas y ordenar por fecha de inicio ascendente
 $sql = "SELECT zd.*, z.name, z.course
@@ -200,19 +273,19 @@ foreach($meeting->ids as $id) {
                     AND c.id = :courseid";
     
             // Ejecutar la consulta y obtener el ID del grupo
-            $groupid = $DB->get_field_sql($sql, array('userid' => $userid, 'courseid' => $course->id));
+            $group_id = $DB->get_field_sql($sql, array('userid' => $userid, 'courseid' => $course->id));
     
             // Si el participante pertenece a un grupo
-         if(!empty($groupid)) {
-    if ($groupid !== false) {
+         if(!empty($group_id )) {
+    if ($group_id  !== false) {
         // Si el grupo aún no existe en el array, lo inicializamos
-        if (!isset($participantesXgroupid[$groupid])) {
-            $participantesXgroupid[$groupid] = [];
+        if (!isset($participantesXgroupid[$group_id])) {
+            $participantesXgroupid[$group_id ] = [];
         }
 
         // Si el participante aún no existe en el array del grupo, lo inicializamos
-        if (!isset($participantesXgroupid[$groupid][$userid])) {
-            $participantesXgroupid[$groupid][$userid] = [
+        if (!isset($participantesXgroupid[$group_id ][$userid])) {
+            $participantesXgroupid[$group_id][$userid] = [
                 'join_time' => $join_time,
                 'duration' => $duration,
                 'name' => $name,
@@ -221,11 +294,11 @@ foreach($meeting->ids as $id) {
             ];
         } else {
             // Si el participante ya existe, actualizamos el join_time al más temprano
-            if ($join_time < $participantesXgroupid[$groupid][$userid]['join_time']) {
-                $participantesXgroupid[$groupid][$userid]['join_time'] = $join_time;
+            if ($join_time < $participantesXgroupid[$group_id][$userid]['join_time']) {
+                $participantesXgroupid[$group_id][$userid]['join_time'] = $join_time;
             }
             // Sumamos la duración al participante
-            $participantesXgroupid[$groupid][$userid]['duration'] += $duration;
+            $participantesXgroupid[$group_id][$userid]['duration'] += $duration;
         }
     }
 }
@@ -233,10 +306,13 @@ foreach($meeting->ids as $id) {
     }
     
     // obtener la sesion de asistencia  
-    foreach ($participantesXgroupid as $groupid => $participantes) {
+    foreach ($participantesXgroupid as $group_id => $participantes) {
+        echo "<br> Grupo ID: $group_id \n <br>";
         
         try{
-            $grupo = $DB->get_record('groups', array('id' => $groupid));
+            $attendance = $DB->get_record('attendance', array('course' => $course->id), 'id', MUST_EXIST);
+            $attendance_id = $attendance->id;
+            $grupo = $DB->get_record('groups', array('id' => $group_id));
             $courseid = $course->id;
         
             $sql = "SELECT *
@@ -248,15 +324,46 @@ foreach($meeting->ids as $id) {
         
         $params = [
             'courseid' => $courseid,
-            'groupid' => $groupid,
+            'groupid' => $group_id,
             'test_date' => $meeting->fecha_reunion
         ];
         
         $session = $DB->get_record_sql($sql, $params);
         
+    if($session->id == null) {
+        echo 'no se creo la sesion';
     
+    // Datos de la sesión
+    $attendanceid = $attendance_id; // Reemplaza con el ID de tu instancia de attendance
+    $groupid = $group_id; // ID del grupo, 0 si es para todos los grupos
+    $duration = $meeting->duration*60; // Duración en segundos
+    $sessdate = $meeting->start_time; // Fecha y hora de la sesión (timestamp)
+    $description = 'Sesion de Clase Normal'; // Descripción de la sesión
+    
+    // Llamar a la función para agregar la sesión
+    add_attendance_session($attendanceid, $groupid, $duration, $sessdate, $description);
+    
+    $attendance = $DB->get_record('attendance', array('course' => $course->id), 'id', MUST_EXIST);
+    $attendance_id = $attendance->id;
+    $grupo = $DB->get_record('groups', array('id' => $group_id));
+    $courseid = $course->id;
 
-        if(!empty($session)) {
+    $sql = "SELECT *
+    FROM {attendance_sessions} a
+    WHERE attendanceid IN (SELECT id FROM {attendance} WHERE course = :courseid) 
+    AND groupid = :groupid
+    AND DATE(FROM_UNIXTIME(a.sessdate)) = :test_date";
+
+
+$params = [
+    'courseid' => $courseid,
+    'groupid' => $group_id,
+    'test_date' => $meeting->fecha_reunion
+];
+
+$session = $DB->get_record_sql($sql, $params);
+
+}
             
 $userid = 2;
 
@@ -267,49 +374,49 @@ $sessionid = $session->id;
 $attendanceid = $session->attendanceid;
 
 $statuses = $DB->get_records_sql("
-    SELECT at.id
-    FROM {attendance_statuses} AS at
-    WHERE at.attendanceid = ?", array($attendanceid));
-
-// Inicializar una cadena para almacenar los IDs
-$statuses_string = '';
-
-// Recorrer los registros y concatenar los IDs de status 
-foreach ($statuses as $status) {
-    $statuses_string .= $status->id . ',';
-}
-$statuses_string = rtrim($statuses_string, ', ');
-
-$actualizaciones = array();
-
-$status_ausente = $DB->get_field_select(
-    'attendance_statuses',
-    'id',
-    'attendanceid = ? AND acronym = ? ',
-    array($attendanceid, 'FI')
-);
-
-$status_tarde= $DB->get_field_select(
-    'attendance_statuses',
-    'id',
-    'attendanceid = ? AND acronym = ? ',
-    array($attendanceid, 'R')
-);
-
-$status_presente = $DB->get_field_select(
-    'attendance_statuses',
-    'id',
-    'attendanceid = ? AND acronym = ? ',
-    array($attendanceid, 'P')
-);
-
-            echo "<br> Grupo ID: $groupid\n" . 'nombre del grupo ' . $grupo->name . 'ID de la session: ' .$sessionid; '<br>';
-
-            $cursantes = groups_get_members($groupid); 
-
-            echo "cursantes:\n" . '<br>';
-
+                SELECT at.id
+                FROM {attendance_statuses} AS at
+                WHERE at.attendanceid = ?", array($attendanceid));
             
+            // Inicializar una cadena para almacenar los IDs
+            $statuses_string = '';
+            
+            // Recorrer los registros y concatenar los IDs de status 
+            foreach ($statuses as $status) {
+                $statuses_string .= $status->id . ',';
+            }
+            $statuses_string = rtrim($statuses_string, ', ');
+            
+            $actualizaciones = array();
+            
+            $status_ausente = $DB->get_field_select(
+                'attendance_statuses',
+                'id',
+                'attendanceid = ? AND acronym = ? ',
+                array($attendanceid, 'FI')
+            );
+            
+            $status_tarde= $DB->get_field_select(
+                'attendance_statuses',
+                'id',
+                'attendanceid = ? AND acronym = ? ',
+                array($attendanceid, 'R')
+            );
+            
+            $status_presente = $DB->get_field_select(
+                'attendance_statuses',
+                'id',
+                'attendanceid = ? AND acronym = ? ',
+                array($attendanceid, 'P')
+            );
+            
+                        echo "<br> Grupo ID: $group_id \n" . 'nombre del grupo ' . $grupo->name . 'ID de la session: ' .$sessionid; '<br>';
+            
+                        $cursantes = groups_get_members($group_id); 
+            
+                        echo "cursantes:\n" . '<br>';
+            
+                        
 echo 'fin' . '<br><br><br><br>'; 
 
 $actualizacion = [];
@@ -321,7 +428,7 @@ $actualizacion = [];
                 // Verificar si el ID del cursante está en la lista de participantes de la reunion 
 
                 // Obtener la información completa del participante
-                    $participante = $participantesXgroupid[$groupid][$cursante_id];
+                    $participante = $participantesXgroupid[$group_id][$cursante_id];
                     
                     if(estuvoTiempoRequerido($participante['duration'] , $porcRequerido, $duracion))  {
                         echo 'paso por estuvo tiempo requerido'; 
@@ -360,17 +467,16 @@ $actualizacion = [];
 
             } foreach ($actualizaciones as $actualizacion) {
                 
-                attendance_handler::update_user_status($actualizacion['sessionid'], $actualizacion['studentid'], $actualizacion['takenbyid'], $actualizacion['statusid'], $actualizacion['statusset']);
+                update_user_status($actualizacion['sessionid'], $actualizacion['studentid'], $actualizacion['takenbyid'], $actualizacion['statusid'], $actualizacion['statusset']);
                 echo '<br>';
                 echo 'taking assistance: DONE';
             } 
-}  else {
-    echo 'no hay session para el grupo id ' . $groupid;
+} catch (error) {} 
+    }
 }
-    } catch(error) {}
-}
-}
+
   // && strcasecmp($result['user_email'], $cursante->email) == 0  lo estoy sacando por que no todos los participantes tienen el email
 
 echo $OUTPUT->footer();
+
 
