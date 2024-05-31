@@ -40,3 +40,4 @@ $string['requirecamera_help'] = 'Check this box if students are required to have
 
 //tarea programada
 $string['tarea_programada'] = 'Programmed  task in Asistbot2';
+$string['print_message'] = 'Print message';
