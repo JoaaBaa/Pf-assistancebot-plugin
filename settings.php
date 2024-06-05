@@ -30,15 +30,34 @@ if ($hassiteconfig) {
 
     // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedIf
     if ($ADMIN->fulltree) {
-        // TODO: Define actual plugin settings page and add it to the tree - {@link https://docs.moodle.org/dev/Admin_settings}.
         // Add the attendance percentage setting.
-    $settings->add(new admin_setting_configtext('mod_asistbot2/attendancepercentage',
-        get_string('attendancepercentage', 'mod_asistbot2'),
-        get_string('attendancepercentage_help', 'mod_asistbot2'), '', PARAM_INT));
+        $settings->add(new admin_setting_configtext('mod_asistbot2/attendancepercentage',
+            get_string('attendancepercentage', 'mod_asistbot2'),
+            get_string('attendancepercentage_help', 'mod_asistbot2'), '', PARAM_INT));
 
-    // Add the require camera setting.
-    $settings->add(new admin_setting_configcheckbox('mod_asistbot2/requirecamera',
-        get_string('requirecamera', 'mod_asistbot2'),
-        get_string('requirecamera_help', 'mod_asistbot2'), 0));
+        // Add the require camera setting.
+        $settings->add(new admin_setting_configcheckbox('mod_asistbot2/requirecamera',
+            get_string('requirecamera', 'mod_asistbot2'),
+            get_string('requirecamera_help', 'mod_asistbot2'), 0));
+
+        // Add the tolerance time setting.
+        $settings->add(new admin_setting_configtext('mod_asistbot2/tolerancetime',
+            get_string('tolerancetime', 'mod_asistbot2'),
+            get_string('tolerancetime_help', 'mod_asistbot2'), '', PARAM_INT));
+
+        // Add the start time setting.
+        $settings->add(new admin_setting_configtext('mod_asistbot2/starttime',
+            get_string('starttime', 'mod_asistbot2'),
+            get_string('starttime_help', 'mod_asistbot2'), '', PARAM_INT));
+
+        // Add the end time setting.
+        $settings->add(new admin_setting_configtext('mod_asistbot2/endtime',
+            get_string('endtime', 'mod_asistbot2'),
+            get_string('endtime_help', 'mod_asistbot2'), '', PARAM_INT));
+        
+        // Add the execution hour setting.
+        $settings->add(new admin_setting_configtext('mod_asistbot2/executionhour',
+        get_string('executionhour', 'mod_asistbot2'),
+        get_string('executionhour_help', 'mod_asistbot2'), '', PARAM_INT));
     }
 }

@@ -16,6 +16,12 @@
         
         <FIELD NAME="attendancepercentage" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="75"/>
         <FIELD NAME="requirecamera" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0"/>
+        
+        <FIELD NAME="tolerancetime" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Tolerance time in minutes for late arrival."/>
+        <FIELD NAME="starttime" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Start time of the class as a timestamp."/>
+        <FIELD NAME="endtime" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="End time of the class as a timestamp."/>
+
+        <FIELD NAME="executionhour" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Task for this bot will execute at the given hour"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>

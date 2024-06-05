@@ -80,6 +80,29 @@ class mod_asistbot2_mod_form extends moodleform_mod {
         // Adding a checkbox for requiring camera.
         $mform->addElement('advcheckbox', 'requirecamera', get_string('requirecamera', 'mod_asistbot2'));
         $mform->addHelpButton('requirecamera', 'requirecamera', 'mod_asistbot2');
+
+        // Adding the tolerance time field.
+        $mform->addElement('text', 'tolerancetime', get_string('tolerancetime', 'mod_asistbot2'), array('size' => '4'));
+        $mform->setType('tolerancetime', PARAM_INT);
+        $mform->addRule('tolerancetime', null, 'required', null, 'client');
+        $mform->addHelpButton('tolerancetime', 'tolerancetime', 'mod_asistbot2');
+
+        // Adding the start time field.
+        $mform->addElement('date_time_selector', 'starttime', get_string('starttime', 'mod_asistbot2'));
+        $mform->addHelpButton('starttime', 'starttime', 'mod_asistbot2');
+
+        // Adding the end time field.
+        $mform->addElement('date_time_selector', 'endtime', get_string('endtime', 'mod_asistbot2'));
+        $mform->addHelpButton('endtime', 'endtime', 'mod_asistbot2');
+
+        // Adding the execution hour field.
+        $hours = array();
+        for ($i = 0; $i <= 23; $i++) {
+            $hours[$i] = sprintf('%02d', $i);
+        }
+        $mform->addElement('select', 'executionhour', get_string('executionhour', 'mod_asistbot2'), $hours);
+        $mform->setType('executionhour', PARAM_INT);
+        $mform->addHelpButton('executionhour', 'executionhour', 'mod_asistbot2');
         
         // ESTE MÉTODO VALIDABA PORCENTAJE DE ASISTENCIA, CAMBIAMOS A TIEMPO EN MINUTOS DE  DURACION DE CLASE,
         // PERO SI NECESITAN UNA VALIDACION DE FORMULARIO ACA DEJO EL EJEMPLO. 
@@ -98,5 +121,24 @@ class mod_asistbot2_mod_form extends moodleform_mod {
 
         // Add standard buttons.
         $this->add_action_buttons();
+    }
+
+    /**
+     * Custom validation should be added here.
+     */
+    public function validation($data, $files) {
+        $errors = parent::validation($data, $files);
+
+        // Validate tolerance time.
+        if ($data['tolerancetime'] > 25) {
+            $errors['tolerancetime'] = get_string('tolerancetimelimit', 'mod_asistbot2');
+        }
+
+        // Validate start and end times.
+        if ($data['starttime'] >= $data['endtime']) {
+            $errors['endtime'] = get_string('endtimegreater', 'mod_asistbot2');
+        }
+
+        return $errors;
     }
 }

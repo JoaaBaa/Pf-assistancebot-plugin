@@ -39,3 +39,15 @@ $string['requirecamera_help'] = 'Marcar si la camara debe estar encendida';
 //Tarea programada
 $string['tarea_programada'] = 'Tarea Programada de Asistbot2';
 
+$string['tolerancetime'] = 'Tiempo de tolerancia de retraso';
+$string['tolerancetime_help'] = 'Tiempo de gracia para que el alumno no pierda el presente';
+$string['tolerancetimelimit'] = 'El tiempo de tolerancia no puede ser mayor a 25 minutos';
+$string['starttime'] = 'Hora de inicio';
+$string['starttime_help'] = 'Hora de inicio de la clase';
+$string['endtime'] = 'Hora de finalización';
+$string['endtime_help'] = 'Hora de fin de la clase';
+$string['endtimegreater'] = 'La hora de finalización debe ser mayor que la hora de inicio';
+
+$string['executionhour'] = 'Hora de ejecución';
+$string['executionhour_help'] = 'Hora en la cual la tarea programada deba ejecutarse (0-23).';
+$string['invalidexecutionhour'] = 'La hora debe estar entre 0 y 23.';

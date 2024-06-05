@@ -54,6 +54,10 @@ function asistbot2_add_instance($moduleinstance, $mform = null) {
     $moduleinstance->timecreated = time();
     $moduleinstance-> attendancepercentage;
     $moduleinstance-> requirecamera;
+    $moduleinstance-> tolerancetime;
+    $moduleinstance-> starttime;
+    $moduleinstance-> endtime;
+    $moduleinstance-> executionhour;
     $id = $DB->insert_record('asistbot2', $moduleinstance);
 
     return $id;

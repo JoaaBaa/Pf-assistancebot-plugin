@@ -41,3 +41,15 @@ $string['requirecamera_help'] = 'Check this box if students are required to have
 //tarea programada
 $string['tarea_programada'] = 'Programmed  task in Asistbot2';
 $string['print_message'] = 'Print message';
+
+$string['tolerancetime'] = 'Delay tolerance time';
+$string['tolerancetime_help'] = 'Time frame where the student may arrive while keeping an attendance check';
+$string['tolerancetimelimit'] = 'Max is 25 min';
+$string['starttime'] = 'Class start time';
+$string['starttime_help'] = 'Beggining of class';
+$string['endtime'] = 'Class end time';
+$string['endtime_help'] = 'End of class';
+
+$string['executionhour'] = 'Execution Hour';
+$string['executionhour_help'] = 'The hour of the day when the task should execute (0-23).';
+$string['invalidexecutionhour'] = 'Execution hour must be between 0 and 23.';
