@@ -71,6 +71,10 @@ class mod_asistbot2_mod_form extends moodleform_mod {
         $mform->addElement('static', 'label1', 'asistbot2settings', get_string('asistbot2settings', 'mod_asistbot2'));
         $mform->addElement('header', 'asistbot2fieldset', get_string('asistbot2fieldset', 'mod_asistbot2'));
 
+        // Adding a checkbox for bot activation/deactivation.
+        $mform->addElement('advcheckbox', 'ison', get_string('ison', 'mod_asistbot2'));
+        $mform->addHelpButton('ison', 'ison', 'mod_asistbot2');
+
         // Adding a percentage field for attendance.
         $mform->addElement('text', 'attendancepercentage', get_string('attendancepercentage', 'mod_asistbot2'), array('size' => '4'));
         $mform->setType('attendancepercentage', PARAM_INT);
@@ -81,11 +85,22 @@ class mod_asistbot2_mod_form extends moodleform_mod {
         $mform->addElement('advcheckbox', 'requirecamera', get_string('requirecamera', 'mod_asistbot2'));
         $mform->addHelpButton('requirecamera', 'requirecamera', 'mod_asistbot2');
 
+        // Adding a checkbox to evaluate tolerance time.
+        $mform->addElement('advcheckbox', 'evaluatetolerance', get_string('evaluatetolerance', 'mod_asistbot2'));
+        $mform->addHelpButton('evaluatetolerance', 'evaluatetolerance', 'mod_asistbot2');
+
         // Adding the tolerance time field.
         $mform->addElement('text', 'tolerancetime', get_string('tolerancetime', 'mod_asistbot2'), array('size' => '4'));
         $mform->setType('tolerancetime', PARAM_INT);
-        $mform->addRule('tolerancetime', null, 'required', null, 'client');
         $mform->addHelpButton('tolerancetime', 'tolerancetime', 'mod_asistbot2');
+        // Disable tolerance time field if evaluate_tolerance checkbox is unchecked.
+        $mform->disabledIf('tolerancetime', 'evaluatetolerance', 'notchecked');
+
+        // Adding the class length field.
+        $mform->addElement('text', 'classlength', get_string('classlength', 'mod_asistbot2'), array('size' => '4'));
+        $mform->setType('classlength', PARAM_INT);
+        $mform->addRule('classlength', null, 'required', null, 'client');
+        $mform->addHelpButton('classlength', 'classlength', 'mod_asistbot2');
 
         // Adding the start time field.
         $mform->addElement('date_time_selector', 'starttime', get_string('starttime', 'mod_asistbot2'));
@@ -103,18 +118,6 @@ class mod_asistbot2_mod_form extends moodleform_mod {
         $mform->addElement('select', 'executionhour', get_string('executionhour', 'mod_asistbot2'), $hours);
         $mform->setType('executionhour', PARAM_INT);
         $mform->addHelpButton('executionhour', 'executionhour', 'mod_asistbot2');
-        
-        // ESTE MÉTODO VALIDABA PORCENTAJE DE ASISTENCIA, CAMBIAMOS A TIEMPO EN MINUTOS DE  DURACION DE CLASE,
-        // PERO SI NECESITAN UNA VALIDACION DE FORMULARIO ACA DEJO EL EJEMPLO. 
-        //public function validation($data, $files) {
-        //    $errors = parent::validation($data, $files);
-    
-        //    if ($data['attendancepercentage'] < 75 || $data['attendancepercentage'] > 100) {
-        //        $errors['attendancepercentage'] = get_string('attendancepercentagerange', 'mod_asistbot2');
-        //    }
-    
-        //    return $errors;
-        //}
 
         // Add standard elements.
         $this->standard_coursemodule_elements();
@@ -129,9 +132,24 @@ class mod_asistbot2_mod_form extends moodleform_mod {
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
 
-        // Validate tolerance time.
-        if ($data['tolerancetime'] > 25) {
-            $errors['tolerancetime'] = get_string('tolerancetimelimit', 'mod_asistbot2');
+        // Validate attendance percentage.
+        if ($data['attendancepercentage'] < 75 || $data['attendancepercentage'] > 95) {
+            $errors['attendancepercentage'] = get_string('invalidattendancepercentage', 'mod_asistbot2');
+        }
+
+        // Validate tolerance time if evaluate_tolerance is checked.
+        if (!empty($data['evaluatetolerance'])) {
+            if (empty($data['tolerancetime']) || $data['tolerancetime'] > 25) {
+                $errors['tolerancetime'] = get_string('tolerancetimelimit', 'mod_asistbot2');
+            }
+        } else {
+            // Assign a default value of 1 if evaluatetolerance is not checked.
+            $data['tolerancetime'] = 1;
+        }
+
+        // Validate class length.
+        if (empty($data['classlength']) || $data['classlength'] <= 0 || $data['classlength'] > 240) {
+            $errors['classlength'] = get_string('invalidclasslength', 'mod_asistbot2');
         }
 
         // Validate start and end times.
