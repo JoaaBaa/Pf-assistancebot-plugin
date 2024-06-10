@@ -52,9 +52,12 @@ function asistbot2_add_instance($moduleinstance, $mform = null) {
     global $DB;
 
     $moduleinstance->timecreated = time();
+    $moduleinstance-> ison;
+    $moduleinstance-> evaluatetolerance;
     $moduleinstance-> attendancepercentage;
     $moduleinstance-> requirecamera;
     $moduleinstance-> tolerancetime;
+    $moduleinstance-> classlength;
     $moduleinstance-> starttime;
     $moduleinstance-> endtime;
     $moduleinstance-> executionhour;
