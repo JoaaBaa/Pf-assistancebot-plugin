@@ -30,6 +30,11 @@ if ($hassiteconfig) {
 
     // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedIf
     if ($ADMIN->fulltree) {
+        // Add the plugin on-off setting.
+        $settings->add(new admin_setting_configcheckbox('mod_asistbot2/ison',
+            get_string('ison', 'mod_asistbot2'),
+            get_string('ison_help', 'mod_asistbot2'), 0));
+
         // Add the attendance percentage setting.
         $settings->add(new admin_setting_configtext('mod_asistbot2/attendancepercentage',
             get_string('attendancepercentage', 'mod_asistbot2'),
@@ -39,6 +44,11 @@ if ($hassiteconfig) {
         $settings->add(new admin_setting_configcheckbox('mod_asistbot2/requirecamera',
             get_string('requirecamera', 'mod_asistbot2'),
             get_string('requirecamera_help', 'mod_asistbot2'), 0));
+
+        // Add the tolerance evaluation setting.
+        $settings->add(new admin_setting_configcheckbox('mod_asistbot2/evaluatetolerance',
+            get_string('evaluatetolerance', 'mod_asistbot2'),
+            get_string('evaluatetolerance_help', 'mod_asistbot2'), 0));
 
         // Add the tolerance time setting.
         $settings->add(new admin_setting_configtext('mod_asistbot2/tolerancetime',
@@ -59,5 +69,10 @@ if ($hassiteconfig) {
         $settings->add(new admin_setting_configtext('mod_asistbot2/executionhour',
         get_string('executionhour', 'mod_asistbot2'),
         get_string('executionhour_help', 'mod_asistbot2'), '', PARAM_INT));
+
+        // Add the class length setting.
+        $settings->add(new admin_setting_configtext('mod_asistbot2/classlength',
+            get_string('classlength', 'mod_asistbot2'),
+            get_string('classlength_help', 'mod_asistbot2'), '', PARAM_INT));
     }
 }
