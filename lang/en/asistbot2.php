@@ -29,11 +29,15 @@ $string['pluginname'] = 'ASISTBOT2';
 $string['modulename'] = 'AsistBot2';
 $string['modulenameplural'] = 'AsistBots2';
 
+//on-off del bot
+$string['ison'] = 'Plugin On';
+$string['ison_help'] = 'Check this box if bot should be processing attendances.';
+
 //Porcentaje acistencias y pedido de cámara
-$string['attendancepercentage'] = 'Attendance time';
-$string['attendancepercentage_help'] = 'Enter in minutes the minimum required time of attendance.';
-$string['invalidattendancepercentage'] = 'Invalid attendance time. Please enter a valid number.';
-$string['attendancepercentagerange'] = 'Attendance percentage must be between 75% and 100%.';
+$string['attendancepercentage'] = 'Attendance percentage';
+$string['attendancepercentage_help'] = 'Enter minimum required attendance percentage.';
+$string['invalidattendancepercentage'] = 'Invalid attendance percentage. Please enter a valid one from 75 to 95.';
+$string['attendancepercentagerange'] = 'Attendance percentage must be between 75% and 95%.';
 
 $string['requirecamera'] = 'Require Camera';
 $string['requirecamera_help'] = 'Check this box if students are required to have their cameras on.';
@@ -42,9 +46,13 @@ $string['requirecamera_help'] = 'Check this box if students are required to have
 $string['tarea_programada'] = 'Programmed  task in Asistbot2';
 $string['print_message'] = 'Print message';
 
+//Evaluación de asistencias
+$string['evaluatetolerance'] = 'Evaluate tolerace time';
+$string['evaluatetolerance_help'] = 'Check this box if this course evaluates students arrival time';
+
 $string['tolerancetime'] = 'Delay tolerance time';
 $string['tolerancetime_help'] = 'Time frame where the student may arrive while keeping an attendance check';
-$string['tolerancetimelimit'] = 'Max is 25 min';
+$string['tolerancetimelimit'] = 'Max is 25 minutes, Minimum is 1 minute.';
 $string['starttime'] = 'Class start time';
 $string['starttime_help'] = 'Beggining of class';
 $string['endtime'] = 'Class end time';
@@ -53,3 +61,8 @@ $string['endtime_help'] = 'End of class';
 $string['executionhour'] = 'Execution Hour';
 $string['executionhour_help'] = 'The hour of the day when the task should execute (0-23).';
 $string['invalidexecutionhour'] = 'Execution hour must be between 0 and 23.';
+
+// Duración de la clase
+$string['classlength'] = 'Class length';
+$string['classlength_help'] = 'Enter the duration of the class in minutes.';
+$string['invalidclasslength'] = 'Invalid class length. The duration must be between 1 and 240 minutes.';
